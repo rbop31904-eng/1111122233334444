@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>متجر بيت الحكمة | المنصة السحابية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- مكتبة Supabase الرسمية -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-deep: #08080c;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --border-glow: rgba(250, 204, 21, 0.3);
+            --primary-yellow: #facc15;
+            --secondary-white: #ffffff;
+            --text-light: #fef08a;
+            --text-dim: #cbd5e1;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--secondary-white);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(250, 204, 21, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(255, 255, 255, 0.05) 0%, transparent 45%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        /* شريط الأدمن المخفي افتراضياً */
+        .auth-bar {
+            display: none;
+            background: rgba(12, 12, 18, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(250, 204, 21, 0.3);
+            padding: 14px 40px;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+            animation: slideDown 0.4s ease;
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .auth-bar input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 8px 14px;
+            border-radius: 10px;
+            color: white;
+            outline: none;
+        }
+        .auth-bar input:focus { border-color: var(--primary-yellow); }
+        .auth-bar button {
+            background: linear-gradient(135deg, #facc15, #ca8a04);
+            color: #000;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 900;
+            transition: 0.3s;
+        }
+        .auth-bar button:hover { transform: translateY(-2px); }
+
+        header {
+            text-align: center;
+            padding: 60px 20px 40px;
+            position: relative;
+        }
+        header h1 {
+            font-size: 48px;
+            font-weight: 900;
+            margin: 0;
+            background: linear-gradient(135deg, #ffffff, #facc15, #fef08a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 40px rgba(250, 204, 21, 0.3);
+            letter-spacing: 1px;
+            cursor: pointer; /* اضغط هنا 3 مرات للوصول الخفي */
+            user-select: none;
+            display: inline-block;
+        }
+        header p {
+            color: var(--text-dim);
+            font-size: 16px;
+            margin-top: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto 60px;
+            padding: 0 25px;
+        }
+
+        .action-bar {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(250, 204, 21, 0.15);
+            padding: 22px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            margin-bottom: 35px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .search-box input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 14px 20px;
+            width: 320px;
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .search-box input:focus {
+            border-color: var(--primary-yellow);
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .publish-btn {
+            display: none; /* مخفي افتراضياً ولا يظهر إلا عند تسجيل الدخول */
+            background: linear-gradient(135deg, #facc15, #eab308);
+            color: #000;
+            border: none;
+            padding: 14px 26px;
+            border-radius: 12px;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: 900;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(250, 204, 21, 0.4);
+        }
+        .publish-btn:hover { transform: translateY(-3px); }
+        
+        .clear-btn {
+            background: linear-gradient(135deg, #ef4444, #991b1b);
+            color: white;
+            border: none;
+            padding: 14px 26px;
+            border-radius: 12px;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            display: none;
+        }
+
+        .upload-modal {
+            display: none;
+            background: rgba(12, 12, 18, 0.96);
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--border-glow);
+            padding: 35px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+            margin-bottom: 35px;
+            text-align: right;
+            animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.95) translateY(-20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .upload-modal input, .upload-modal textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 14px;
+            margin: 10px 0 22px 0;
+            box-sizing: border-box;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Cairo', sans-serif;
+            outline: none;
+        }
+        .upload-modal input:focus, .upload-modal textarea:focus { border-color: var(--primary-yellow); }
+        .file-input-label {
+            display: block;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 18px;
+            border: 2px dashed rgba(250, 204, 21, 0.3);
+            border-radius: 14px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-dim);
+        }
+        .upload-modal input[type="file"] { display: none; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 28px;
+        }
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary-yellow);
+            box-shadow: 0 20px 50px rgba(250, 204, 21, 0.2);
+        }
+        .card img {
+            width: 95px;
+            height: 95px;
+            border-radius: 22px;
+            object-fit: cover;
+            margin-bottom: 18px;
+            border: 2px solid rgba(250, 204, 21, 0.3);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+        .card h3 { margin: 0 0 10px 0; color: #ffffff; font-size: 21px; font-weight: 700; }
+        .card p { color: var(--text-dim); font-size: 14px; flex-grow: 1; text-align: center; line-height: 1.7; }
+        
+        .download-btn {
+            display: block;
+            background: linear-gradient(135deg, #facc15, #ca8a04);
+            color: #000;
+            padding: 13px;
+            text-decoration: none;
+            border-radius: 14px;
+            font-weight: 900;
+            margin-top: 22px;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(250, 204, 21, 0.3);
+        }
+        .download-btn:hover { transform: translateY(-2px); }
+        
+        .delete-app-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(239, 68, 68, 0.85);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: none;
+        }
+
+        h2 { 
+            color: white; 
+            font-size: 26px; 
+            margin-bottom: 25px; 
+            border-right: 5px solid var(--primary-yellow); 
+            padding-right: 15px; 
+        }
+    </style>
+</head>
+<body>
+
+    <!-- شريط الأدمن المخفي (لا يظهر إلا بضغط العنوان 3 مرات) -->
+    <div class="auth-bar" id="secretAuthBar">
+        <div>
+            <span style="color:var(--primary-yellow);">🔐 لوحة التحكم السرية: </span>
+            <span id="userStatus" style="color: #ffffff; font-weight: bold;">غير مسجل</span>
+        </div>
+        <div id="loginFormContainer" style="display: flex; gap: 12px; align-items: center;">
+            <input type="text" id="loginUser" placeholder="المستخدم">
+            <input type="password" id="loginPass" placeholder="كلمة المرور">
+            <button onclick="login()">دخول</button>
+        </div>
+        <div id="logoutContainer" style="display: none;">
+            <button onclick="logout()" style="background: #ef4444; color: white;">إغلاق الجلسة</button>
+        </div>
+    </div>
+
+    <header>
+        <!-- اضغط هنا 3 مرات متتالية لإظهار لوحة التحكم السرية -->
+        <h1 onclick="triggerSecretAdmin()">🏛️ متجر بيت الحكمة</h1>
+        <p>المنصة السحابية الخاصة بعبد الرؤوف</p>
+    </header>
+
+    <div class="container">
+
+        <div class="action-bar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 ابحث عن تطبيق..." onkeyup="searchApps()">
+            </div>
+            <div class="btn-group">
+                <button class="publish-btn" id="publishBtn" onclick="toggleUploadForm()">+ انشر تطبيقك</button>
+                <button class="clear-btn" id="clearAllBtn" onclick="clearAllApps()">حذف الكل</button>
+            </div>
+        </div>
+
+        <div id="uploadModal" class="upload-modal">
+            <h3 style="margin-top:0; color:white; font-size:22px;">🚀 إطلاق تطبيق جديد في السحابة</h3>
+            <label style="color:var(--text-dim)">اسم التطبيق:</label>
+            <input type="text" id="appName" placeholder="اكتب اسم التطبيق...">
+            
+            <label class="file-input-label" for="appImgFile">📁 اضغط لاختيار صورة الأيقونة من الملفات</label>
+            <input type="file" id="appImgFile" accept="image/*">
+            <span id="imgFileName" style="font-size:12px; color:var(--text-dim);">لم يتم اختيار صورة</span>
+
+            <label style="color:var(--text-dim); display:block; margin-top:15px;">وصف التطبيق:</label>
+            <textarea id="appDesc" placeholder="اكتب وصفاً جذاباً للتطبيق..."></textarea>
+
+            <button class="download-btn" style="width:100%; border:none; cursor:pointer; margin-top:20px;" onclick="addNewApp()">نشر وإطلاق التطبيق في السحابة</button>
+        </div>
+
+        <h2>التطبيقات السحابية المتاحة</h2>
+        
+        <div class="grid" id="appsContainer"></div>
+
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://salvfhryruakgjlfwgwr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_HpK0-vvSS7WzX3NB-qW3pg_99G5aWSN';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let isAdmin = false;
+        const ADMIN_USER = "abd_raouf";
+        const ADMIN_PASS = "raouf@2026_secure";
+
+        // خدعة الضغط 3 مرات على الشعار لإظهار لوحة التحكم
+        let clickCount = 0;
+        let clickTimer = null;
+        function triggerSecretAdmin() {
+            clickCount++;
+            if (clickCount === 1) {
+                clickTimer = setTimeout(() => { clickCount = 0; }, 1000);
+            } else if (clickCount === 3) {
+                clearTimeout(clickTimer);
+                clickCount = 0;
+                const bar = document.getElementById('secretAuthBar');
+                bar.style.display = bar.style.display === 'flex' ? 'none' : 'flex';
+            }
+        }
+
+        window.onload = function() {
+            fetchAppsFromSupabase();
+        };
+
+        function login() {
+            const user = document.getElementById('loginUser').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+
+            if(user === ADMIN_USER && pass === ADMIN_PASS) {
+                isAdmin = true;
+                document.getElementById('userStatus').innerText = "👑 أدمن (عبد الرؤوف)";
+                document.getElementById('clearAllBtn').style.display = "inline-block";
+                document.getElementById('publishBtn').style.display = "inline-block";
+                document.getElementById('loginFormContainer').style.display = "none";
+                document.getElementById('logoutContainer').style.display = "flex";
+                alert("مرحباً بك يا عبد الرؤوف!");
+            } else {
+                // تظاهر للزوار بأنه لا يوجد شيء ملفت
+                alert("خطأ في بيانات الدخول.");
+            }
+            updatePermissions();
+        }
+
+        function logout() {
+            isAdmin = false;
+            document.getElementById('secretAuthBar').style.display = "none";
+            document.getElementById('loginFormContainer').style.display = "flex";
+            document.getElementById('logoutContainer').style.display = "none";
+            document.getElementById('clearAllBtn').style.display = "none";
+            document.getElementById('publishBtn').style.display = "none";
+            document.getElementById('loginUser').value = "";
+            document.getElementById('loginPass').value = "";
+            updatePermissions();
+        }
+
+        function updatePermissions() {
+            const deleteButtons = document.querySelectorAll('.delete-app-btn');
+            deleteButtons.forEach(btn => { btn.style.display = isAdmin ? 'block' : 'none'; });
+        }
+
+        function toggleUploadForm() {
+            if(!isAdmin) return;
+            const modal = document.getElementById('uploadModal');
+            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+        }
+
+        let selectedImgData = "";
+        document.getElementById('appImgFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(file) {
+                document.getElementById('imgFileName').innerText = "تم اختيار الصورة: " + file.name;
+                const reader = new FileReader();
+                reader.onload = function(event) { selectedImgData = event.target.result; };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        async function addNewApp() {
+            const name = document.getElementById('appName').value;
+            const desc = document.getElementById('appDesc').value;
+
+            if(!name || !desc) {
+                alert("الرجاء إدخال اسم التطبيق والوصف!");
+                return;
+            }
+
+            const imgSrc = selectedImgData || "https://via.placeholder.com/95/121218/ffffff?text=App";
+            const appId = Date.now();
+
+            const { error } = await supabaseClient
+                .from('wisdom_apps')
+                .insert([{ id: appId, name: name, desc: desc, img: imgSrc }]);
+
+            if (error) {
+                alert("خطأ: " + error.message);
+                return;
+            }
+
+            alert("تم نشر التطبيق في السحابة بنجاح!");
+            fetchAppsFromSupabase();
+            toggleUploadForm();
+
+            document.getElementById('appName').value = '';
+            document.getElementById('appDesc').value = '';
+            document.getElementById('appImgFile').value = '';
+            document.getElementById('imgFileName').innerText = "لم يتم اختيار صورة";
+            selectedImgData = "";
+        }
+
+        async function fetchAppsFromSupabase() {
+            const container = document.getElementById('appsContainer');
+            container.innerHTML = '<p style="color:var(--text-dim); text-align:center; grid-column: 1/-1;">جاري جلب التطبيقات من السحابة...</p>';
+
+            const { data: apps, error } = await supabaseClient
+                .from('wisdom_apps')
+                .select('*')
+                .order('id', { ascending: false });
+
+            if (error) {
+                container.innerHTML = '<p style="color:#ef4444; text-align:center; grid-column: 1/-1;">خطأ في الاتصال بقاعدة البيانات.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+
+            if (!apps || apps.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-dim); text-align:center; grid-column: 1/-1;">لا توجد تطبيقات حالياً.</p>';
+                return;
+            }
+
+            apps.forEach(app => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <button class="delete-app-btn" style="display: ${isAdmin ? 'block' : 'none'};" onclick="deleteApp(${app.id})">حذف</button>
+                    <img src="${app.img}" alt="أيقونة">
+                    <h3>${app.name}</h3>
+                    <p>${app.desc}</p>
+                    <a href="#" class="download-btn" onclick="alert('جاري بدء تحميل التطبيق...')">تحميل التطبيق</a>
+                `;
+                container.appendChild(card);
+            });
+            updatePermissions();
+        }
+
+        async function deleteApp(id) {
+            if(!isAdmin) return;
+            if(confirm("هل أنت متأكد من حذف هذا التطبيق؟")) {
+                const { error } = await supabaseClient.from('wisdom_apps').delete().eq('id', id);
+                if (error) { alert("فشل الحذف: " + error.message); return; }
+                fetchAppsFromSupabase();
+            }
+        }
+
+        async function clearAllApps() {
+            if(!isAdmin) return;
+            if(confirm("تحذير: هل أنت متأكد من حذف جميع التطبيقات؟")) {
+                const { error } = await supabaseClient.from('wisdom_apps').delete().neq('id', 0);
+                if (error) { alert("فشل الحذف: " + error.message); return; }
+                fetchAppsFromSupabase();
+            }
+        }
+
+        function searchApps() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.getElementsByClassName('card');
+            for (let i = 0; i < cards.length; i++) {
+                const title = cards[i].getElementsByTagName('h3')[0].innerText.toLowerCase();
+                cards[i].style.display = title.includes(input) ? "" : "none";
+            }
+        }
+    </script>
+
+</body>
+</html>
