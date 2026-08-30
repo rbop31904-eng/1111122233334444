@@ -88,7 +88,7 @@
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 40px rgba(250, 204, 21, 0.3);
             letter-spacing: 1px;
-            cursor: pointer; /* اضغط هنا 3 مرات للوصول الخفي */
+            cursor: pointer;
             user-select: none;
             display: inline-block;
         }
@@ -140,7 +140,7 @@
             flex-wrap: wrap;
         }
         .publish-btn {
-            display: none; /* مخفي افتراضياً ولا يظهر إلا عند تسجيل الدخول */
+            display: none;
             background: linear-gradient(135deg, #facc15, #eab308);
             color: #000;
             border: none;
@@ -195,6 +195,7 @@
             outline: none;
         }
         .upload-modal input:focus, .upload-modal textarea:focus { border-color: var(--primary-yellow); }
+        
         .file-input-label {
             display: block;
             background: rgba(255, 255, 255, 0.03);
@@ -287,7 +288,7 @@
 </head>
 <body>
 
-    <!-- شريط الأدمن المخفي (لا يظهر إلا بضغط العنوان 3 مرات) -->
+    <!-- شريط الأدمن المخفي -->
     <div class="auth-bar" id="secretAuthBar">
         <div>
             <span style="color:var(--primary-yellow);">🔐 لوحة التحكم السرية: </span>
@@ -304,7 +305,6 @@
     </div>
 
     <header>
-        <!-- اضغط هنا 3 مرات متتالية لإظهار لوحة التحكم السرية -->
         <h1 onclick="triggerSecretAdmin()">🏛️ متجر بيت الحكمة</h1>
         <p>المنصة السحابية الخاصة بعبد الرؤوف</p>
     </header>
@@ -321,16 +321,24 @@
             </div>
         </div>
 
+        <!-- نافذة رفع التطبيق (محدثة لتشمل زر ملف الـ APK) -->
         <div id="uploadModal" class="upload-modal">
             <h3 style="margin-top:0; color:white; font-size:22px;">🚀 إطلاق تطبيق جديد في السحابة</h3>
+            
             <label style="color:var(--text-dim)">اسم التطبيق:</label>
             <input type="text" id="appName" placeholder="اكتب اسم التطبيق...">
             
-            <label class="file-input-label" for="appImgFile">📁 اضغط لاختيار صورة الأيقونة من الملفات</label>
+            <!-- زر اختيار صورة الأيقونة -->
+            <label class="file-input-label" for="appImgFile">🖼️ اضغط لاختيار صورة الأيقونة</label>
             <input type="file" id="appImgFile" accept="image/*">
-            <span id="imgFileName" style="font-size:12px; color:var(--text-dim);">لم يتم اختيار صورة</span>
+            <span id="imgFileName" style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:15px;">لم يتم اختيار صورة</span>
 
-            <label style="color:var(--text-dim); display:block; margin-top:15px;">وصف التطبيق:</label>
+            <!-- زر اختيار ملف الـ APK الجديد -->
+            <label class="file-input-label" for="appApkFile" style="border-color: #3b82f6;">📦 اضغط لاختيار ملف الـ APK (التطبيق)</label>
+            <input type="file" id="appApkFile" accept=".apk">
+            <span id="apkFileName" style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:15px;">لم يتم اختيار ملف APK</span>
+
+            <label style="color:var(--text-dim); display:block;">وصف التطبيق:</label>
             <textarea id="appDesc" placeholder="اكتب وصفاً جذاباً للتطبيق..."></textarea>
 
             <button class="download-btn" style="width:100%; border:none; cursor:pointer; margin-top:20px;" onclick="addNewApp()">نشر وإطلاق التطبيق في السحابة</button>
@@ -351,7 +359,6 @@
         const ADMIN_USER = "abd_raouf";
         const ADMIN_PASS = "raouf@2026_secure";
 
-        // خدعة الضغط 3 مرات على الشعار لإظهار لوحة التحكم
         let clickCount = 0;
         let clickTimer = null;
         function triggerSecretAdmin() {
@@ -383,7 +390,6 @@
                 document.getElementById('logoutContainer').style.display = "flex";
                 alert("مرحباً بك يا عبد الرؤوف!");
             } else {
-                // تظاهر للزوار بأنه لا يوجد شيء ملفت
                 alert("خطأ في بيانات الدخول.");
             }
             updatePermissions();
@@ -423,6 +429,17 @@
             }
         });
 
+        let selectedApkData = "";
+        document.getElementById('appApkFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(file) {
+                document.getElementById('apkFileName').innerText = "تم اختيار ملف APK: " + file.name;
+                const reader = new FileReader();
+                reader.onload = function(event) { selectedApkData = event.target.result; };
+                reader.readAsDataURL(file); // قراءة ملف الـ APK لحفظه وتنزيله لاحقاً
+            }
+        });
+
         async function addNewApp() {
             const name = document.getElementById('appName').value;
             const desc = document.getElementById('appDesc').value;
@@ -433,26 +450,31 @@
             }
 
             const imgSrc = selectedImgData || "https://via.placeholder.com/95/121218/ffffff?text=App";
+            const apkSrc = selectedApkData || "#";
             const appId = Date.now();
 
             const { error } = await supabaseClient
                 .from('wisdom_apps')
-                .insert([{ id: appId, name: name, desc: desc, img: imgSrc }]);
+                .insert([{ id: appId, name: name, desc: desc, img: imgSrc, apk: apkSrc }]);
 
             if (error) {
                 alert("خطأ: " + error.message);
                 return;
             }
 
-            alert("تم نشر التطبيق في السحابة بنجاح!");
+            alert("تم نشر التطبيق و ملف الـ APK في السحابة بنجاح!");
             fetchAppsFromSupabase();
             toggleUploadForm();
 
+            // إعادة تعيين الحقول
             document.getElementById('appName').value = '';
             document.getElementById('appDesc').value = '';
             document.getElementById('appImgFile').value = '';
+            document.getElementById('appApkFile').value = '';
             document.getElementById('imgFileName').innerText = "لم يتم اختيار صورة";
+            document.getElementById('apkFileName').innerText = "لم يتم اختيار ملف APK";
             selectedImgData = "";
+            selectedApkData = "";
         }
 
         async function fetchAppsFromSupabase() {
@@ -479,12 +501,13 @@
             apps.forEach(app => {
                 const card = document.createElement('div');
                 card.className = 'card';
+                // جعل زر التحميل يسحب ملف الـ APK المرفوع فعلياً
                 card.innerHTML = `
                     <button class="delete-app-btn" style="display: ${isAdmin ? 'block' : 'none'};" onclick="deleteApp(${app.id})">حذف</button>
                     <img src="${app.img}" alt="أيقونة">
                     <h3>${app.name}</h3>
                     <p>${app.desc}</p>
-                    <a href="#" class="download-btn" onclick="alert('جاري بدء تحميل التطبيق...')">تحميل التطبيق</a>
+                    <a href="${app.apk || '#'}" download="${app.name}.apk" class="download-btn">تحميل التطبيق (APK)</a>
                 `;
                 container.appendChild(card);
             });
