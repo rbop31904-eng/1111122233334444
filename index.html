@@ -3,544 +3,475 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>متجر بيت الحكمة | المنصة السحابية</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <!-- مكتبة Supabase الرسمية -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>منظم الدكتور - جراحة الأوعية الدموية</title>
     <style>
         :root {
-            --bg-deep: #08080c;
-            --bg-card: rgba(255, 255, 255, 0.03);
-            --border-glow: rgba(250, 204, 21, 0.3);
-            --primary-yellow: #facc15;
-            --secondary-white: #ffffff;
-            --text-light: #fef08a;
-            --text-dim: #cbd5e1;
+            --bg-black: #050505;
+            --card-black: #121212;
+            --card-border: #262626;
+            --text-white: #ffffff;
+            --text-muted: #a1a1aa;
+            --red-accent: #dc2626;
+            --red-hover: #b91c1c;
         }
 
-        * { box-sizing: border-box; }
-
-        body {
-            font-family: 'Cairo', sans-serif;
-            background-color: var(--bg-deep);
-            color: var(--secondary-white);
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 15% 15%, rgba(250, 204, 21, 0.12) 0%, transparent 45%),
-                radial-gradient(circle at 85% 85%, rgba(255, 255, 255, 0.05) 0%, transparent 45%);
-            background-attachment: fixed;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-white);
             min-height: 100vh;
-        }
-
-        /* شريط الأدمن المخفي افتراضياً */
-        .auth-bar {
-            display: none;
-            background: rgba(12, 12, 18, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(250, 204, 21, 0.3);
-            padding: 14px 40px;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            flex-wrap: wrap;
-            gap: 15px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
-            animation: slideDown 0.4s ease;
-        }
-        @keyframes slideDown {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .auth-bar input {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 8px 14px;
-            border-radius: 10px;
-            color: white;
-            outline: none;
-        }
-        .auth-bar input:focus { border-color: var(--primary-yellow); }
-        .auth-bar button {
-            background: linear-gradient(135deg, #facc15, #ca8a04);
-            color: #000;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 900;
-            transition: 0.3s;
-        }
-        .auth-bar button:hover { transform: translateY(-2px); }
-
-        header {
-            text-align: center;
-            padding: 60px 20px 40px;
-            position: relative;
-        }
-        header h1 {
-            font-size: 48px;
-            font-weight: 900;
-            margin: 0;
-            background: linear-gradient(135deg, #ffffff, #facc15, #fef08a);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 40px rgba(250, 204, 21, 0.3);
-            letter-spacing: 1px;
-            cursor: pointer;
-            user-select: none;
-            display: inline-block;
-        }
-        header p {
-            color: var(--text-dim);
-            font-size: 16px;
-            margin-top: 12px;
-            letter-spacing: 0.5px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto 60px;
-            padding: 0 25px;
-        }
-
-        .action-bar {
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(250, 204, 21, 0.15);
-            padding: 22px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-            margin-bottom: 35px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        .search-box input {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 14px 20px;
-            width: 320px;
-            border-radius: 12px;
-            color: white;
-            font-size: 15px;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-        .search-box input:focus {
-            border-color: var(--primary-yellow);
-            box-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
-        }
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        .publish-btn {
-            display: none;
-            background: linear-gradient(135deg, #facc15, #eab308);
-            color: #000;
-            border: none;
-            padding: 14px 26px;
-            border-radius: 12px;
-            font-size: 15px;
-            cursor: pointer;
-            font-weight: 900;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 20px rgba(250, 204, 21, 0.4);
-        }
-        .publish-btn:hover { transform: translateY(-3px); }
-        
-        .clear-btn {
-            background: linear-gradient(135deg, #ef4444, #991b1b);
-            color: white;
-            border: none;
-            padding: 14px 26px;
-            border-radius: 12px;
-            font-size: 15px;
-            cursor: pointer;
-            font-weight: bold;
-            display: none;
-        }
-
-        .upload-modal {
-            display: none;
-            background: rgba(12, 12, 18, 0.96);
-            backdrop-filter: blur(25px);
-            border: 1px solid var(--border-glow);
-            padding: 35px;
-            border-radius: 24px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
-            margin-bottom: 35px;
-            text-align: right;
-            animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes popIn {
-            from { opacity: 0; transform: scale(0.95) translateY(-20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .upload-modal input, .upload-modal textarea {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 14px;
-            margin: 10px 0 22px 0;
-            box-sizing: border-box;
-            border-radius: 12px;
-            color: white;
-            font-family: 'Cairo', sans-serif;
-            outline: none;
-        }
-        .upload-modal input:focus, .upload-modal textarea:focus { border-color: var(--primary-yellow); }
-        
-        .file-input-label {
-            display: block;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 18px;
-            border: 2px dashed rgba(250, 204, 21, 0.3);
-            border-radius: 14px;
-            cursor: pointer;
-            margin-bottom: 15px;
-            text-align: center;
-            font-size: 14px;
-            color: var(--text-dim);
-        }
-        .upload-modal input[type="file"] { display: none; }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-            gap: 28px;
-        }
-        .card {
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 24px;
-            padding: 28px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            text-align: right;
             display: flex;
             flex-direction: column;
             align-items: center;
-            position: relative;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .card:hover {
-            transform: translateY(-10px);
-            border-color: var(--primary-yellow);
-            box-shadow: 0 20px 50px rgba(250, 204, 21, 0.2);
-        }
-        .card img {
-            width: 95px;
-            height: 95px;
-            border-radius: 22px;
-            object-fit: cover;
-            margin-bottom: 18px;
-            border: 2px solid rgba(250, 204, 21, 0.3);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-        }
-        .card h3 { margin: 0 0 10px 0; color: #ffffff; font-size: 21px; font-weight: 700; }
-        .card p { color: var(--text-dim); font-size: 14px; flex-grow: 1; text-align: center; line-height: 1.7; }
-        
-        .download-btn {
-            display: block;
-            background: linear-gradient(135deg, #facc15, #ca8a04);
-            color: #000;
-            padding: 13px;
-            text-decoration: none;
-            border-radius: 14px;
-            font-weight: 900;
-            margin-top: 22px;
-            width: 100%;
-            text-align: center;
-            box-sizing: border-box;
-            transition: all 0.3s;
-            box-shadow: 0 5px 20px rgba(250, 204, 21, 0.3);
-        }
-        .download-btn:hover { transform: translateY(-2px); }
-        
-        .delete-app-btn {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(239, 68, 68, 0.85);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            font-size: 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: none;
+            padding: 15px;
         }
 
-        h2 { 
-            color: white; 
-            font-size: 26px; 
-            margin-bottom: 25px; 
-            border-right: 5px solid var(--primary-yellow); 
-            padding-right: 15px; 
+        /* شاشة الفيديو الترحيبي والتنبيه بكامل الشاشة */
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            overflow: hidden;
+        }
+
+        #intro-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-controls {
+            position: absolute;
+            bottom: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 10000;
+        }
+
+        .video-btn {
+            background: rgba(0, 0, 0, 0.85);
+            color: #ffffff;
+            border: 2px solid var(--red-accent);
+            padding: 12px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .video-btn:hover {
+            background: var(--red-accent);
+        }
+
+        /* التطبيق الرئيسي */
+        .container {
+            width: 100%;
+            max-width: 650px;
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            background: var(--card-black);
+            border: 1px solid var(--card-border);
+            border-top: 4px solid var(--red-accent);
+            border-radius: 12px;
+        }
+
+        header h1 {
+            color: #ffffff;
+            font-size: 22px;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: var(--red-accent);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .status-box {
+            background: #1e1010;
+            border: 1px solid var(--red-accent);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #fca5a5;
+        }
+
+        .card {
+            background: var(--card-black);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+        }
+
+        .card h2 {
+            font-size: 17px;
+            margin-bottom: 15px;
+            color: #ffffff;
+            border-right: 4px solid var(--red-accent);
+            padding-right: 10px;
+        }
+
+        .grid-timers {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .timer-box {
+            background: #000000;
+            border: 1px solid var(--card-border);
+            padding: 14px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .timer-box p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .timer-box span {
+            font-size: 17px;
+            font-weight: bold;
+            color: var(--red-accent);
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        /* إدارة الجدول */
+        .schedule-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        input, select {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background: #000000;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--red-accent);
+        }
+
+        button.action-btn {
+            background: var(--red-accent);
+            color: #ffffff;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+
+        button.action-btn:hover {
+            background: var(--red-hover);
+        }
+
+        .schedule-list {
+            list-style: none;
+            max-height: 250px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .schedule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #000000;
+            border: 1px solid var(--card-border);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .badge-work { 
+            background: var(--red-accent);
+            color: #ffffff;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .badge-off { 
+            background: #262626;
+            color: #ffffff;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        .delete-btn:hover {
+            color: var(--red-accent);
         }
     </style>
 </head>
 <body>
 
-    <!-- شريط الأدمن المخفي -->
-    <div class="auth-bar" id="secretAuthBar">
-        <div>
-            <span style="color:var(--primary-yellow);">🔐 لوحة التحكم السرية: </span>
-            <span id="userStatus" style="color: #ffffff; font-weight: bold;">غير مسجل</span>
-        </div>
-        <div id="loginFormContainer" style="display: flex; gap: 12px; align-items: center;">
-            <input type="text" id="loginUser" placeholder="المستخدم">
-            <input type="password" id="loginPass" placeholder="كلمة المرور">
-            <button onclick="login()">دخول</button>
-        </div>
-        <div id="logoutContainer" style="display: none;">
-            <button onclick="logout()" style="background: #ef4444; color: white;">إغلاق الجلسة</button>
+    <!-- واجهة الفيديو الذي صممته (صوت وصورة معاً) -->
+    <div id="intro-overlay">
+        <!-- تأكد أن اسم الفيديو في مجلدك هو intro-video.mp4 -->
+        <video id="intro-video" src="intro-video.mp4" autoplay playsinline></video>
+        <div class="video-controls">
+            <button class="video-btn" onclick="closeIntro()">تخطي والدخول للتطبيق</button>
         </div>
     </div>
 
-    <header>
-        <h1 onclick="triggerSecretAdmin()">🏛️ متجر بيت الحكمة</h1>
-        <p>المنصة السحابية الخاصة بعبد الرؤوف</p>
-    </header>
+    <!-- واجهة التطبيق -->
+    <div class="container" id="main-app">
+        <header>
+            <h1>منظم جدول جراحة الأوعية الدموية</h1>
+            <p id="current-date-display"></p>
+            <div id="alarm-status" class="status-box">🔔 منبه الـ 9:00 صباحاً (توقيت القاهرة) نشط لتنبيه ما قبل العمل</div>
+        </header>
 
-    <div class="container">
-
-        <div class="action-bar">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="🔍 ابحث عن تطبيق..." onkeyup="searchApps()">
-            </div>
-            <div class="btn-group">
-                <button class="publish-btn" id="publishBtn" onclick="toggleUploadForm()">+ انشر تطبيقك</button>
-                <button class="clear-btn" id="clearAllBtn" onclick="clearAllApps()">حذف الكل</button>
+        <!-- المؤقتات والمواعيد -->
+        <div class="card">
+            <h2>العد التنازلي والمواعيد</h2>
+            <div class="grid-timers">
+                <div class="timer-box">
+                    <p>العد التنازلي لرمضان</p>
+                    <span id="ramadan-countdown">--</span>
+                </div>
+                <div class="timer-box">
+                    <p>متبقي لهدف (سنتين)</p>
+                    <span id="two-years-countdown">--</span>
+                </div>
+                <div class="timer-box full-width">
+                    <p>الوقت المتبقي لكسوة وملابس العيد</p>
+                    <span id="eid-countdown">--</span>
+                </div>
             </div>
         </div>
 
-        <!-- نافذة رفع التطبيق (محدثة لتشمل زر ملف الـ APK) -->
-        <div id="uploadModal" class="upload-modal">
-            <h3 style="margin-top:0; color:white; font-size:22px;">🚀 إطلاق تطبيق جديد في السحابة</h3>
-            
-            <label style="color:var(--text-dim)">اسم التطبيق:</label>
-            <input type="text" id="appName" placeholder="اكتب اسم التطبيق...">
-            
-            <!-- زر اختيار صورة الأيقونة -->
-            <label class="file-input-label" for="appImgFile">🖼️ اضغط لاختيار صورة الأيقونة</label>
-            <input type="file" id="appImgFile" accept="image/*">
-            <span id="imgFileName" style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:15px;">لم يتم اختيار صورة</span>
-
-            <!-- زر اختيار ملف الـ APK الجديد -->
-            <label class="file-input-label" for="appApkFile" style="border-color: #3b82f6;">📦 اضغط لاختيار ملف الـ APK (التطبيق)</label>
-            <input type="file" id="appApkFile" accept=".apk">
-            <span id="apkFileName" style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:15px;">لم يتم اختيار ملف APK</span>
-
-            <label style="color:var(--text-dim); display:block;">وصف التطبيق:</label>
-            <textarea id="appDesc" placeholder="اكتب وصفاً جذاباً للتطبيق..."></textarea>
-
-            <button class="download-btn" style="width:100%; border:none; cursor:pointer; margin-top:20px;" onclick="addNewApp()">نشر وإطلاق التطبيق في السحابة</button>
+        <!-- جدول العمل والإجازات -->
+        <div class="card">
+            <h2>تحديد جدول العمل والإجازة</h2>
+            <div class="schedule-form">
+                <div class="form-row">
+                    <input type="date" id="shift-date">
+                    <select id="shift-type">
+                        <option value="عمل جراحي">عمل جراحي 🩺</option>
+                        <option value="إجازة راحة">إجازة راحة 🏠</option>
+                    </select>
+                </div>
+                <button class="action-btn" onclick="saveShift()">حفظ في الجدول</button>
+            </div>
+            <ul class="schedule-list" id="schedule-list">
+                <!-- المواعيد المحفوظة -->
+            </ul>
         </div>
-
-        <h2>التطبيقات السحابية المتاحة</h2>
-        
-        <div class="grid" id="appsContainer"></div>
-
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://salvfhryruakgjlfwgwr.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_HpK0-vvSS7WzX3NB-qW3pg_99G5aWSN';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const introOverlay = document.getElementById('intro-overlay');
+        const mainApp = document.getElementById('main-app');
+        const introVideo = document.getElementById('intro-video');
 
-        let isAdmin = false;
-        const ADMIN_USER = "abd_raouf";
-        const ADMIN_PASS = "raouf@2026_secure";
-
-        let clickCount = 0;
-        let clickTimer = null;
-        function triggerSecretAdmin() {
-            clickCount++;
-            if (clickCount === 1) {
-                clickTimer = setTimeout(() => { clickCount = 0; }, 1000);
-            } else if (clickCount === 3) {
-                clearTimeout(clickTimer);
-                clickCount = 0;
-                const bar = document.getElementById('secretAuthBar');
-                bar.style.display = bar.style.display === 'flex' ? 'none' : 'flex';
-            }
+        // طلب إذن الإشعارات
+        if ("Notification" in window) {
+            Notification.requestPermission();
         }
 
-        window.onload = function() {
-            fetchAppsFromSupabase();
+        // تشغيل فيديو الصوت الخاص بك مباشرةً وبأقصى صوت
+        window.addEventListener('DOMContentLoaded', () => {
+            introVideo.muted = false;
+            introVideo.volume = 1.0;
+            
+            let playPromise = introVideo.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    // تفاعل بسيط لضمان عمل الصوت في حال قيود المتصفح
+                    document.addEventListener('click', () => {
+                        introVideo.muted = false;
+                        introVideo.play();
+                    }, { once: true });
+                });
+            }
+        });
+
+        introVideo.onended = function() {
+            closeIntro();
         };
 
-        function login() {
-            const user = document.getElementById('loginUser').value.trim();
-            const pass = document.getElementById('loginPass').value.trim();
+        function closeIntro() {
+            introOverlay.style.display = 'none';
+            mainApp.style.display = 'flex';
+        }
 
-            if(user === ADMIN_USER && pass === ADMIN_PASS) {
-                isAdmin = true;
-                document.getElementById('userStatus').innerText = "👑 أدمن (عبد الرؤوف)";
-                document.getElementById('clearAllBtn').style.display = "inline-block";
-                document.getElementById('publishBtn').style.display = "inline-block";
-                document.getElementById('loginFormContainer').style.display = "none";
-                document.getElementById('logoutContainer').style.display = "flex";
-                alert("مرحباً بك يا عبد الرؤوف!");
-            } else {
-                alert("خطأ في بيانات الدخول.");
+        // عرض التاريخ اليومي
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date-display').innerText = new Date().toLocaleDateString('ar-EG', options);
+
+        // نظام الفحص الذكي لتنبيه الـ 9 صباحاً بتوقيت القاهرة
+        function checkMorningAlarm() {
+            const shifts = JSON.parse(localStorage.getItem('doctorShifts')) || [];
+            
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+            const todayShift = shifts.find(s => s.date === todayStr);
+            const tomorrowShift = shifts.find(s => s.date === tomorrowStr);
+
+            const isTodayOff = todayShift && todayShift.type.includes('إجازة');
+            const isTomorrowWork = tomorrowShift && tomorrowShift.type.includes('عمل');
+
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+
+            // إذا كان اليوم إجازة وغداً عمل، والساعة أصبحت 9:00 صباحاً بالتحديد
+            if (isTodayOff && isTomorrowWork) {
+                if (currentHour === 9 && currentMinute === 0) {
+                    triggerAlarmVideo();
+                }
             }
-            updatePermissions();
         }
 
-        function logout() {
-            isAdmin = false;
-            document.getElementById('secretAuthBar').style.display = "none";
-            document.getElementById('loginFormContainer').style.display = "flex";
-            document.getElementById('logoutContainer').style.display = "none";
-            document.getElementById('clearAllBtn').style.display = "none";
-            document.getElementById('publishBtn').style.display = "none";
-            document.getElementById('loginUser').value = "";
-            document.getElementById('loginPass').value = "";
-            updatePermissions();
-        }
+        function triggerAlarmVideo() {
+            introOverlay.style.display = 'flex';
+            introVideo.currentTime = 0;
+            introVideo.muted = false;
+            introVideo.volume = 1.0;
+            introVideo.play();
 
-        function updatePermissions() {
-            const deleteButtons = document.querySelectorAll('.delete-app-btn');
-            deleteButtons.forEach(btn => { btn.style.display = isAdmin ? 'block' : 'none'; });
-        }
-
-        function toggleUploadForm() {
-            if(!isAdmin) return;
-            const modal = document.getElementById('uploadModal');
-            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
-        }
-
-        let selectedImgData = "";
-        document.getElementById('appImgFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if(file) {
-                document.getElementById('imgFileName').innerText = "تم اختيار الصورة: " + file.name;
-                const reader = new FileReader();
-                reader.onload = function(event) { selectedImgData = event.target.result; };
-                reader.readAsDataURL(file);
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("تنبيه جدول جراحة الأوعية الدموية 🩺", {
+                    body: "اليوم إجازة وغداً لديك عمل جراحي! تم تفعيل فيديو التنبيه.",
+                    icon: "https://cdn-icons-png.flaticon.com/512/3004/3004458.png"
+                });
             }
-        });
+        }
 
-        let selectedApkData = "";
-        document.getElementById('appApkFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if(file) {
-                document.getElementById('apkFileName').innerText = "تم اختيار ملف APK: " + file.name;
-                const reader = new FileReader();
-                reader.onload = function(event) { selectedApkData = event.target.result; };
-                reader.readAsDataURL(file); // قراءة ملف الـ APK لحفظه وتنزيله لاحقاً
-            }
-        });
+        // فحص التوقيت كل دقيقة بدقة
+        setInterval(checkMorningAlarm, 60000);
 
-        async function addNewApp() {
-            const name = document.getElementById('appName').value;
-            const desc = document.getElementById('appDesc').value;
+        // عدادات الأوقات والمناسبات
+        function updateCountdowns() {
+            const now = new Date();
+            
+            const ramadanDate = new Date('2027-02-08T00:00:00'); 
+            const diffRamadan = Math.ceil((ramadanDate - now) / (1000 * 60 * 60 * 24));
+            document.getElementById('ramadan-countdown').innerText = diffRamadan > 0 ? `${diffRamadan} يوم` : 'رمضان مبارك!';
 
-            if(!name || !desc) {
-                alert("الرجاء إدخال اسم التطبيق والوصف!");
+            const targetTwoYears = new Date();
+            targetTwoYears.setFullYear(targetTwoYears.getFullYear() + 2);
+            const diffYears = Math.ceil((targetTwoYears - now) / (1000 * 60 * 60 * 24));
+            document.getElementById('two-years-countdown').innerText = `${diffYears} يوم`;
+
+            const eidDate = new Date('2027-03-10T00:00:00');
+            const diffEid = Math.ceil((eidDate - now) / (1000 * 60 * 60 * 24));
+            document.getElementById('eid-countdown').innerText = diffEid > 0 ? `${diffEid} يوم متبقي للشراء` : 'وقت العيد!';
+        }
+        updateCountdowns();
+
+        // إدارة جدول العمل
+        function saveShift() {
+            const date = document.getElementById('shift-date').value;
+            const type = document.getElementById('shift-type').value;
+
+            if (!date) {
+                alert('الرجاء اختيار التاريخ');
                 return;
             }
 
-            const imgSrc = selectedImgData || "https://via.placeholder.com/95/121218/ffffff?text=App";
-            const apkSrc = selectedApkData || "#";
-            const appId = Date.now();
+            let shifts = JSON.parse(localStorage.getItem('doctorShifts')) || [];
+            shifts = shifts.filter(s => s.date !== date);
+            shifts.push({ date, type });
+            shifts.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            const { error } = await supabaseClient
-                .from('wisdom_apps')
-                .insert([{ id: appId, name: name, desc: desc, img: imgSrc, apk: apkSrc }]);
-
-            if (error) {
-                alert("خطأ: " + error.message);
-                return;
-            }
-
-            alert("تم نشر التطبيق و ملف الـ APK في السحابة بنجاح!");
-            fetchAppsFromSupabase();
-            toggleUploadForm();
-
-            // إعادة تعيين الحقول
-            document.getElementById('appName').value = '';
-            document.getElementById('appDesc').value = '';
-            document.getElementById('appImgFile').value = '';
-            document.getElementById('appApkFile').value = '';
-            document.getElementById('imgFileName').innerText = "لم يتم اختيار صورة";
-            document.getElementById('apkFileName').innerText = "لم يتم اختيار ملف APK";
-            selectedImgData = "";
-            selectedApkData = "";
+            localStorage.setItem('doctorShifts', JSON.stringify(shifts));
+            loadShifts();
+            checkMorningAlarm();
         }
 
-        async function fetchAppsFromSupabase() {
-            const container = document.getElementById('appsContainer');
-            container.innerHTML = '<p style="color:var(--text-dim); text-align:center; grid-column: 1/-1;">جاري جلب التطبيقات من السحابة...</p>';
+        function deleteShift(date) {
+            let shifts = JSON.parse(localStorage.getItem('doctorShifts')) || [];
+            shifts = shifts.filter(s => s.date !== date);
+            localStorage.setItem('doctorShifts', JSON.stringify(shifts));
+            loadShifts();
+        }
 
-            const { data: apps, error } = await supabaseClient
-                .from('wisdom_apps')
-                .select('*')
-                .order('id', { ascending: false });
+        function loadShifts() {
+            const listEl = document.getElementById('schedule-list');
+            listEl.innerHTML = '';
+            let shifts = JSON.parse(localStorage.getItem('doctorShifts')) || [];
 
-            if (error) {
-                container.innerHTML = '<p style="color:#ef4444; text-align:center; grid-column: 1/-1;">خطأ في الاتصال بقاعدة البيانات.</p>';
+            if (shifts.length === 0) {
+                listEl.innerHTML = '<li style="text-align:center; color:#a1a1aa; padding: 15px;">لا توجد أيام مسجلة بعد.</li>';
                 return;
             }
 
-            container.innerHTML = '';
-
-            if (!apps || apps.length === 0) {
-                container.innerHTML = '<p style="color:var(--text-dim); text-align:center; grid-column: 1/-1;">لا توجد تطبيقات حالياً.</p>';
-                return;
-            }
-
-            apps.forEach(app => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                // جعل زر التحميل يسحب ملف الـ APK المرفوع فعلياً
-                card.innerHTML = `
-                    <button class="delete-app-btn" style="display: ${isAdmin ? 'block' : 'none'};" onclick="deleteApp(${app.id})">حذف</button>
-                    <img src="${app.img}" alt="أيقونة">
-                    <h3>${app.name}</h3>
-                    <p>${app.desc}</p>
-                    <a href="${app.apk || '#'}" download="${app.name}.apk" class="download-btn">تحميل التطبيق (APK)</a>
+            shifts.forEach(s => {
+                const li = document.createElement('li');
+                li.className = 'schedule-item';
+                li.innerHTML = `
+                    <span>📅 <strong>${s.date}</strong></span> 
+                    <div style="display: flex; align-items: center;">
+                        <span class="${s.type.includes('عمل') ? 'badge-work' : 'badge-off'}">${s.type}</span>
+                        <button class="delete-btn" onclick="deleteShift('${s.date}')" title="حذف">✕</button>
+                    </div>
                 `;
-                container.appendChild(card);
+                listEl.appendChild(li);
             });
-            updatePermissions();
         }
-
-        async function deleteApp(id) {
-            if(!isAdmin) return;
-            if(confirm("هل أنت متأكد من حذف هذا التطبيق؟")) {
-                const { error } = await supabaseClient.from('wisdom_apps').delete().eq('id', id);
-                if (error) { alert("فشل الحذف: " + error.message); return; }
-                fetchAppsFromSupabase();
-            }
-        }
-
-        async function clearAllApps() {
-            if(!isAdmin) return;
-            if(confirm("تحذير: هل أنت متأكد من حذف جميع التطبيقات؟")) {
-                const { error } = await supabaseClient.from('wisdom_apps').delete().neq('id', 0);
-                if (error) { alert("فشل الحذف: " + error.message); return; }
-                fetchAppsFromSupabase();
-            }
-        }
-
-        function searchApps() {
-            const input = document.getElementById('searchInput').value.toLowerCase();
-            const cards = document.getElementsByClassName('card');
-            for (let i = 0; i < cards.length; i++) {
-                const title = cards[i].getElementsByTagName('h3')[0].innerText.toLowerCase();
-                cards[i].style.display = title.includes(input) ? "" : "none";
-            }
-        }
+        loadShifts();
     </script>
-
 </body>
 </html>
